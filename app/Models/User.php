@@ -18,12 +18,14 @@ use HasFactory, Notifiable, HasApiTokens;
 
     protected $fillable = [
         'name',
+        'email',
         'phone',
         'password',
+        'role',
         'activated',
-        'has_invested',           // ✅ ajouté
-        'investment_start_at',    // ✅ ajouté
-        'investment_processed',   // ✅ ajouté
+        'has_invested',
+        'investment_start_at',
+        'investment_processed',
     ];
 
     protected $hidden = [
@@ -33,11 +35,16 @@ use HasFactory, Notifiable, HasApiTokens;
 
     protected $casts = [
         'activated' => 'boolean',
-        'has_investvested' => 'boolean',       // ✅
-        'investment_processed' => 'boolean',   // ✅
-        'investment_start_at' => 'datetime',   // ✅
+        'has_invested' => 'boolean',
+        'investment_processed' => 'boolean',
+        'investment_start_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
 
 
 public function wallet()
@@ -67,5 +74,15 @@ return $this->hasMany(Withdrawal::class);
 public function transactions()
 {
 return $this->hasMany(Transaction::class);
+}
+
+public function loanApplications()
+{
+    return $this->hasMany(LoanApplication::class);
+}
+
+public function grantApplications()
+{
+    return $this->hasMany(GrantApplication::class);
 }
 }

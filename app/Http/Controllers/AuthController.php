@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Events\UserRegistered;
 use App\Models\User;
 use App\Models\Wallet;
 
@@ -18,13 +19,16 @@ class AuthController extends Controller
             'phone' => 'required|string|unique:users,phone',
             'password' => 'required|string|min:6|confirmed',
             'name' => 'nullable|string|max:255',
+            'email' => 'required|email|max:255',
         ]);
 
         $user = User::create([
             'name' => $request->name,
+            'email' => $request->email,
             'phone' => $request->phone,
-            'password' => $request->password, // auto-haché grâce à $casts
-            'activated' => false, // ou true selon ta logique métier
+            'password' => $request->password,
+            'role' => 'client',
+            'activated' => false,
         ]);
 
         // Créer un wallet associé
@@ -34,11 +38,14 @@ class AuthController extends Controller
             'virtual_balance_cfa' => 0,
         ]);
 
+        // Déclenche l'envoi du mail de bienvenue de manière asynchrone via la queue
+        UserRegistered::dispatch($user);
+
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
             'message' => 'User registered successfully. Awaiting activation.',
-            'user' => $user->only('id', 'name', 'phone', 'activated'),
+            'user' => $user->only('id', 'name', 'email', 'phone', 'activated', 'role'),
             'access_token' => $token,
             'token_type' => 'Bearer',
         ], 201);
@@ -70,7 +77,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Logged in successfully.',
-            'user' => $user->only('id', 'name', 'phone', 'activated'),
+            'user' => $user->only('id', 'name', 'email', 'phone', 'activated', 'role'),
             'access_token' => $token,
             'token_type' => 'Bearer',
         ]);
