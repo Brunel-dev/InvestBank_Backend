@@ -30,9 +30,11 @@ RUN composer install --no-dev --optimize-autoloader
 # 8. Assurer les droits d'écriture pour Laravel
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# 9. Configurer Apache pour écouter sur le port dynamique de Render
-RUN sed -i "s/Listen 80/Listen \${PORT:-80}/g" /etc/apache2/ports.conf
-RUN sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:\${PORT:-80}>/g" /etc/apache2/sites-available/000-default.conf
-
-# 10. Démarrage : Caches, migrations et lancement du serveur
-CMD php artisan config:cache && php artisan view:cache && php artisan migrate --force && apache2-foreground
+# 9. Démarrage : Injection du port dynamique Render, Caches, migrations et lancement
+CMD sed -i "s/Listen 80/Listen $PORT/g" /etc/apache2/ports.conf && \
+    sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:$PORT>/g" /etc/apache2/sites-available/000-default.conf && \
+    php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache && \
+    php artisan migrate --force && \
+    apache2-foreground
